@@ -17,8 +17,7 @@ const SETTINGS_PATH = path.join(DATA_DIR, 'settings.json');
 const SSH_USERNAME = 'root';
 
 const DEFAULT_SETTINGS = {
-  sshPassword: 'admin',
-  clusterResetSafetyPassword: '969131'
+  sshPassword: 'admin'
 };
 
 async function loadSettings() {
@@ -136,63 +135,6 @@ function execCommand(conn, command, { onData } = {}) {
   });
 }
 
-function runInteractiveClusterReset(conn, { onData } = {}) {
-  return new Promise((resolve, reject) => {
-    conn.shell({ term: 'xterm-color', cols: 120, rows: 40 }, (err, stream) => {
-      if (err) return reject(err);
-
-      let combined = '';
-      const write = (s) => {
-        stream.write(s);
-      };
-
-      const sendKeysSequence = async () => {
-        write('configure-node\n');
-        await new Promise((r) => setTimeout(r, 1500));
-
-        for (let i = 0; i < 5; i++) {
-          write('\u001b[B');
-          await new Promise((r) => setTimeout(r, 150));
-        }
-        write('\n');
-        await new Promise((r) => setTimeout(r, 1200));
-
-        write('\u001b[B');
-        await new Promise((r) => setTimeout(r, 150));
-        write('\n');
-        await new Promise((r) => setTimeout(r, 1200));
-
-        write('\n');
-        await new Promise((r) => setTimeout(r, 9000));
-
-        write('\u001b');
-        await new Promise((r) => setTimeout(r, 500));
-        write('\u001b');
-        await new Promise((r) => setTimeout(r, 500));
-
-        resolve({ ok: true, output: combined });
-        stream.end();
-      };
-
-      stream.on('data', (d) => {
-        const s = d.toString('utf8');
-        combined += s;
-        onData?.(s);
-      });
-
-      stream.on('close', () => {
-        resolve({ ok: true, output: combined });
-      });
-
-      stream.on('error', (e) => {
-        reject(e);
-      });
-
-      sendKeysSequence().catch(reject);
-    });
-  });
-}
-
 app.get('/api/sites', async (req, res) => {
   const data = await loadSites();
   res.json({ sites: data.sites });
@@ -263,12 +205,12 @@ app.get('/api/jobs/:id/stream', (req, res) => {
   });
 });
 
-app.post('/api/sites/:id/restack', async (req, res) => {
+app.post('/api/sites/:id/stack-status', async (req, res) => {
   const data = await loadSites();
   const site = data.sites.find((s) => s.id === req.params.id);
   if (!site) return res.status(404).json({ error: 'site not found' });
 
-  const job = createJob('restack', site);
+  const job = createJob('stack-status', site);
   setJobStatus(job, 'running');
   appendJobLog(job, `Connecting to ${site.host}:${site.port} as ${SSH_USERNAME}...\n`);
 
@@ -277,8 +219,8 @@ app.post('/api/sites/:id/restack', async (req, res) => {
     try {
       const settings = await loadSettings();
       conn = await connectSsh({ ...site, password: settings.sshPassword });
-      appendJobLog(job, 'Connected. Running: stack assure restart\n\n');
-      const result = await execCommand(conn, 'stack assure restart', {
+      appendJobLog(job, 'Connected. Running: stack status\n\n');
+      const result = await execCommand(conn, 'stack status', {
         onData: (s) => appendJobLog(job, s)
       });
       job.exitCode = result.code;
@@ -302,31 +244,31 @@ app.post('/api/sites/:id/restack', async (req, res) => {
   res.status(202).json({ jobId: job.id });
 });
 
-app.post('/api/sites/:id/cluster-reset', async (req, res) => {
-  const { confirmPassword } = req.body || {};
-  const settings = await loadSettings();
-  if (String(confirmPassword || '') !== String(settings.clusterResetSafetyPassword || '')) {
-    return res.status(403).json({ error: 'Invalid confirmation password' });
-  }
-
+app.post('/api/sites/:id/restack', async (req, res) => {
   const data = await loadSites();
   const site = data.sites.find((s) => s.id === req.params.id);
   if (!site) return res.status(404).json({ error: 'site not found' });
 
-  const job = createJob('cluster-reset', site);
+  const job = createJob('restack', site);
   setJobStatus(job, 'running');
   appendJobLog(job, `Connecting to ${site.host}:${site.port} as ${SSH_USERNAME}...\n`);
 
   (async () => {
     let conn;
     try {
+      const settings = await loadSettings();
       conn = await connectSsh({ ...site, password: settings.sshPassword });
-      appendJobLog(job, 'Connected. Launching configure-node and attempting automated reset...\n\n');
-      await runInteractiveClusterReset(conn, {
+      appendJobLog(job, 'Connected. Running: stack -L restart\n\n');
+      const result = await execCommand(conn, 'stack -L restart', {
         onData: (s) => appendJobLog(job, s)
       });
-      job.exitCode = 0;
-      setJobStatus(job, 'success');
+      job.exitCode = result.code;
+      if (result.code === 0) {
+        setJobStatus(job, 'success');
+      } else {
+        job.error = `Command exited with code ${result.code}`;
+        setJobStatus(job, 'failed');
+      }
     } catch (e) {
       job.error = String(e?.message || e);
       setJobStatus(job, 'failed');

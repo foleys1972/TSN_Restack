@@ -60,7 +60,7 @@
           <div class="panel-head">
             <div>
               <div class="panel-title">Sites</div>
-              <div class="panel-sub">Run restack or cluster reset on a selected site.</div>
+              <div class="panel-sub">Run actions on a selected site.</div>
             </div>
             <div class="right muted" id="sitesMeta"></div>
           </div>
@@ -102,26 +102,6 @@
         SSH user is <span class="mono">root</span>. Password is fixed to <span class="mono">admin</span>.
       </footer>
     </main>
-  </div>
-
-  <div id="confirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
-    <div class="modalCard">
-      <div class="modalTitle">Confirm cluster reset</div>
-      <div class="modalBody">
-        <div class="warn">
-          Dangerous operation. This will attempt to run <span class="mono">configure-node</span> and reset the cluster.
-        </div>
-        <label>
-          <div class="label">Safety password</div>
-          <input id="confirmPassword" type="password" inputmode="numeric" autocomplete="off" placeholder="Enter safety password" />
-        </label>
-        <div id="confirmError" class="error"></div>
-      </div>
-      <div class="modalActions">
-        <button id="confirmCancel" type="button" class="btn btn-ghost">Cancel</button>
-        <button id="confirmRun" type="button" class="btn btn-danger">Run reset</button>
-      </div>
-    </div>
   </div>
 
   <script src="/app.js"></script>

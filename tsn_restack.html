@@ -109,7 +109,7 @@ body {
                         Provide the password.
                     </div>
                     <div class="p-3 bg-slate-800/60 rounded border border-slate-700">
-                        Run: <span class="mono text-[#6ebe4a]">stack assure restart</span>
+                        Run: <span class="mono text-[#6ebe4a]">stack -L restart</span>
                     </div>
                 </div>
 
@@ -246,7 +246,7 @@ function initSshLab() {
         if (session.stage === 'ssh') hintEl.textContent = `Type: ssh root@${session.host}`;
         else if (session.stage === 'hostkey') hintEl.textContent = 'Type: yes';
         else if (session.stage === 'password') hintEl.textContent = 'Type: admin';
-        else if (session.stage === 'command') hintEl.textContent = 'Type: stack assure restart';
+        else if (session.stage === 'command') hintEl.textContent = 'Type: stack -L restart';
         else hintEl.textContent = '';
     }
 
@@ -349,8 +349,8 @@ function initSshLab() {
 
         if (session.stage === 'command') {
             printPrompt(`root@${session.host}:~# `, line);
-            if (line !== 'stack assure restart') {
-                setStatus(false, 'Command must be: stack assure restart');
+            if (line !== 'stack -L restart') {
+                setStatus(false, 'Command must be: stack -L restart');
                 return;
             }
             setStatus(true, 'Restart triggered.');

@@ -22,8 +22,20 @@ if not exist dist mkdir dist
 
 echo.
 echo [3/4] Building exe (this can take a few minutes the first time)...
-call npx pkg -t node18-win-x64 -o dist\tsn-ssh-automation.exe index.js
+call npx pkg -t node18-win-x64 -o dist\tsn-ssh-automation.tmp.exe index.js
 if errorlevel 1 exit /b 1
+
+echo.
+echo Replacing dist\tsn-ssh-automation.exe ...
+copy /Y dist\tsn-ssh-automation.tmp.exe dist\tsn-ssh-automation.exe >nul
+if errorlevel 1 (
+  echo.
+  echo ERROR: Could not overwrite dist\tsn-ssh-automation.exe.
+  echo - Make sure the EXE is not currently running.
+  echo - If Windows Defender/AV is scanning it, wait a moment and retry.
+  exit /b 1
+)
+del /Q dist\tsn-ssh-automation.tmp.exe >nul 2>nul
 
 echo.
 echo [4/4] Copying runtime assets...
@@ -36,7 +48,7 @@ if not exist dist\data\sites.json (
 )
 
 if not exist dist\data\settings.json (
-  echo {"sshPassword":"admin","clusterResetSafetyPassword":"969131"} > dist\data\settings.json
+  echo {"sshPassword":"admin"} > dist\data\settings.json
 )
 
 echo.

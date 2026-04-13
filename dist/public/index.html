@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TSN SSH Automation</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="topbar-inner">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true"></div>
+          <div>
+            <div class="brand-title">TSN SSH Automation</div>
+            <div class="brand-sub">Manage sites and run automations over SSH</div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button id="refreshBtn" type="button" class="btn btn-ghost">Refresh</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="container">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="panel-title">Add site</div>
+            <div class="panel-sub">Store a server name/host you can run tasks against.</div>
+          </div>
+        </div>
+
+        <form id="addSiteForm" class="form-grid">
+          <label class="field">
+            <div class="label">Site name</div>
+            <input id="siteName" required placeholder="e.g. UKV Lab 123" />
+          </label>
+          <label class="field">
+            <div class="label">Server / Host</div>
+            <input id="siteHost" required placeholder="e.g. ukv123456.acme.com" />
+          </label>
+          <label class="field">
+            <div class="label">Port</div>
+            <input id="sitePort" type="number" min="1" max="65535" placeholder="22" />
+          </label>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="addSiteBtn">Add site</button>
+          </div>
+        </form>
+
+        <div id="addSiteError" class="error"></div>
+      </section>
+
+      <section class="grid-2">
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Sites</div>
+              <div class="panel-sub">Run actions on a selected site.</div>
+            </div>
+            <div class="right muted" id="sitesMeta"></div>
+          </div>
+
+          <div id="sites" class="sites"></div>
+          <div id="sitesEmpty" class="muted"></div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">Job output</div>
+              <div class="panel-sub">Live logs stream here while the job runs.</div>
+            </div>
+            <div class="job-badges">
+              <div id="jobMeta" class="badge badge-muted"></div>
+              <div id="jobStatus" class="badge badge-muted"></div>
+            </div>
+          </div>
+
+          <div class="terminal">
+            <div class="terminal-head">
+              <div class="dots" aria-hidden="true">
+                <span class="dot dot-r"></span>
+                <span class="dot dot-y"></span>
+                <span class="dot dot-g"></span>
+              </div>
+              <div class="terminal-title">session</div>
+              <div class="terminal-right">
+                <div id="jobSpinner" class="spinner hidden" aria-hidden="true"></div>
+              </div>
+            </div>
+            <pre id="jobLog" class="terminal-body"></pre>
+          </div>
+        </section>
+      </section>
+
+      <footer class="footer muted">
+        SSH user is <span class="mono">root</span>. Password is fixed to <span class="mono">admin</span>.
+      </footer>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

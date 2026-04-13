@@ -1,7 +1,6 @@
 let sites = [];
 let currentJobId = null;
 let currentStream = null;
-let pendingClusterResetSiteId = null;
 let isJobRunning = false;
 
 const el = (id) => document.getElementById(id);
@@ -88,7 +87,7 @@ function renderSites() {
       </div>
       <div class="siteActions">
         <button class="btn btn-primary" data-action="restack" data-id="${escapeHtml(s.id)}">Run restack</button>
-        <button class="btn btn-danger" data-action="clusterReset" data-id="${escapeHtml(s.id)}">Cluster reset</button>
+        <button class="btn" data-action="stackStatus" data-id="${escapeHtml(s.id)}">Stack status</button>
         <button class="btn btn-ghost" data-action="delete" data-id="${escapeHtml(s.id)}">Delete</button>
       </div>
     `;
@@ -199,48 +198,11 @@ async function onSiteAction(e) {
     return;
   }
 
-  if (action === 'clusterReset') {
-    pendingClusterResetSiteId = id;
-    openConfirmModal();
-  }
-}
-
-function openConfirmModal() {
-  const modal = el('confirmModal');
-  const pass = el('confirmPassword');
-  if (!modal || !pass) return;
-  showError('confirmError', '');
-  pass.value = '';
-  modal.classList.remove('hidden');
-  modal.setAttribute('aria-hidden', 'false');
-  pass.focus();
-}
-
-function closeConfirmModal() {
-  const modal = el('confirmModal');
-  if (!modal) return;
-  modal.classList.add('hidden');
-  modal.setAttribute('aria-hidden', 'true');
-  pendingClusterResetSiteId = null;
-}
-
-async function runConfirmedClusterReset() {
-  const pass = el('confirmPassword');
-  if (!pass) return;
-  const confirmPassword = pass.value;
-
-  if (!pendingClusterResetSiteId) return;
-
-  try {
-    showError('confirmError', '');
-    const data = await api(`/api/sites/${pendingClusterResetSiteId}/cluster-reset`, {
-      method: 'POST',
-      body: JSON.stringify({ confirmPassword })
-    });
-    closeConfirmModal();
+  if (action === 'stackStatus') {
+    showError('addSiteError', '');
+    const data = await api(`/api/sites/${id}/stack-status`, { method: 'POST', body: JSON.stringify({}) });
     startJobStream(data.jobId);
-  } catch (err) {
-    showError('confirmError', err.message);
+    return;
   }
 }
 
@@ -273,20 +235,6 @@ function setup() {
 
   el('refreshBtn')?.addEventListener('click', async () => {
     await loadSites();
-  });
-
-  el('confirmCancel')?.addEventListener('click', closeConfirmModal);
-  el('confirmRun')?.addEventListener('click', runConfirmedClusterReset);
-
-  el('confirmModal')?.addEventListener('click', (e) => {
-    if (e.target === el('confirmModal')) closeConfirmModal();
-  });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const modal = el('confirmModal');
-      if (modal && !modal.classList.contains('hidden')) closeConfirmModal();
-    }
   });
 
   loadSites().catch((err) => {

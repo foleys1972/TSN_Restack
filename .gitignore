@@ -1,10 +1,10 @@
 node_modules/
 
-dist/
-
 data/
 
 vega_cli_casread.html
+
+dist.zip
 
 .DS_Store
 Thumbs.db
