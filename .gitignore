@@ -1,0 +1,10 @@
+node_modules/
+
+dist/
+
+data/
+
+vega_cli_casread.html
+
+.DS_Store
+Thumbs.db

@@ -1,0 +1,390 @@
+{% extends "base.html" %}
+
+{% block title %}TSN Restack - Training Platform{% endblock %}
+
+{% block extra_css %}
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;800&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    overflow-x: hidden;
+}
+
+.mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+::-webkit-scrollbar {
+    width: 8px;
+}
+::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+::-webkit-scrollbar-thumb {
+    background: #3b82f6;
+    border-radius: 4px;
+}
+
+.glass-panel {
+    background: rgba(30, 41, 59, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.circuit-bg {
+    background-image: radial-gradient(#1e293b 15%, transparent 16%), radial-gradient(#1e293b 15%, transparent 16%);
+    background-size: 20px 20px;
+    background-position: 0 0, 10px 10px;
+    opacity: 0.1;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: -1;
+}
+
+.terminal-shell {
+    background: #020617;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.terminal-output {
+    height: 360px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.terminal-input {
+    font-family: 'JetBrains Mono', monospace;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="circuit-bg"></div>
+
+<section class="pt-24 pb-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-white">
+                TSN Restack
+            </h1>
+            <p class="mt-4 text-slate-400 max-w-2xl mx-auto">
+                Practice connecting to the server via SSH and running the required command.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="ssh-lab" class="py-20 bg-slate-900/50 border-y border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-16">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#049fd9]/10 text-[#049fd9] text-sm font-semibold border border-[#049fd9]/20 mb-4">
+                <i class="fa-solid fa-user-secret"></i> Interactive Lab
+            </div>
+            <h2 class="text-3xl md:text-4xl font-bold text-white">TSN Restack Lab</h2>
+            <p class="mt-4 text-slate-400 max-w-3xl mx-auto">
+                Complete the SSH connection and run the restack command. This is a simulation.
+                Type each step exactly as prompted.
+            </p>
+        </div>
+
+        <div class="grid lg:grid-cols-2 gap-8 items-start">
+            <div class="glass-panel p-6 rounded-2xl border border-slate-700">
+                <h3 class="font-bold text-lg mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-[#049fd9]"></i> Objectives
+                </h3>
+                <div class="space-y-3 text-sm text-slate-300">
+                    <div class="p-3 bg-slate-800/60 rounded border border-slate-700">
+                        Connect to the server as root using SSH.
+                    </div>
+                    <div class="p-3 bg-slate-800/60 rounded border border-slate-700">
+                        Provide the password.
+                    </div>
+                    <div class="p-3 bg-slate-800/60 rounded border border-slate-700">
+                        Run: <span class="mono text-[#6ebe4a]">stack assure restart</span>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-4 rounded-xl border border-slate-700 bg-slate-950/50">
+                    <div class="text-xs text-slate-400 mb-2">Credentials for this lab</div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="p-3 rounded bg-slate-900 border border-slate-800 col-span-2">
+                            <div class="text-xs text-slate-500">Server</div>
+                            <div class="mono text-white" id="ssh-lab-server">-</div>
+                        </div>
+                        <div class="p-3 rounded bg-slate-900 border border-slate-800">
+                            <div class="text-xs text-slate-500">Password</div>
+                            <div class="mono text-white">admin</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-panel p-6 rounded-2xl border border-slate-700">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="font-bold text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-terminal text-[#6ebe4a]"></i> Interactive Terminal
+                    </h3>
+                    <div class="flex gap-2">
+                        <button type="button" id="ssh-lab-reset" class="px-3 py-2 text-xs rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 transition">Reset</button>
+                    </div>
+                </div>
+
+                <div class="terminal-shell rounded-xl overflow-hidden">
+                    <div class="px-4 py-2 bg-slate-900 border-b border-slate-800 flex items-center gap-2">
+                        <div class="w-2 h-2 rounded-full bg-red-500/80"></div>
+                        <div class="w-2 h-2 rounded-full bg-yellow-500/80"></div>
+                        <div class="w-2 h-2 rounded-full bg-green-500/80"></div>
+                        <div class="ml-2 text-xs text-slate-400 mono">ssh-lab</div>
+                    </div>
+                    <div id="ssh-lab-output" class="terminal-output p-4 text-slate-200"></div>
+                    <div class="p-3 border-t border-slate-800 bg-slate-950">
+                        <div class="flex gap-2">
+                            <input id="ssh-lab-input" class="terminal-input flex-1 bg-slate-900 text-white border border-slate-700 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#049fd9]/60" autocomplete="off" spellcheck="false" />
+                            <button type="button" id="ssh-lab-submit" class="px-4 py-2 rounded bg-[#049fd9] hover:bg-[#0378a6] text-white text-sm font-semibold transition">Enter</button>
+                        </div>
+                        <div id="ssh-lab-hint" class="mt-2 text-xs text-slate-500"></div>
+                    </div>
+                </div>
+
+                <div id="ssh-lab-status" class="mt-4 text-sm"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+function pick(arr) {
+    return arr[randInt(0, arr.length - 1)];
+}
+
+function randomIp() {
+    const ranges = [
+        [10, randInt(0, 255), randInt(0, 255), randInt(2, 254)],
+        [172, randInt(16, 31), randInt(0, 255), randInt(2, 254)],
+        [192, 168, randInt(0, 255), randInt(2, 254)]
+    ];
+    const r = pick(ranges);
+    return `${r[0]}.${r[1]}.${r[2]}.${r[3]}`;
+}
+
+function formatLastLogin(date) {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const pad2 = (n) => String(n).padStart(2, '0');
+    return `${days[date.getDay()]} ${months[date.getMonth()]} ${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())} ${date.getFullYear()}`;
+}
+
+function randomFingerprint() {
+    const hex = '0123456789abcdef';
+    let parts = [];
+    for (let i = 0; i < 16; i++) {
+        let p = '';
+        for (let j = 0; j < 2; j++) p += hex[randInt(0, hex.length - 1)];
+        parts.push(p);
+    }
+    return `SHA256:${parts.join('')}`;
+}
+
+function initSshLab() {
+    const FIXED_SSH_HOST = 'ukv123456.acme.com';
+    const KNOWN_HOST_KEY = `tsn_restack_known_host:${FIXED_SSH_HOST}`;
+    const outputEl = document.getElementById('ssh-lab-output');
+    const inputEl = document.getElementById('ssh-lab-input');
+    const submitEl = document.getElementById('ssh-lab-submit');
+    const resetEl = document.getElementById('ssh-lab-reset');
+    const hintEl = document.getElementById('ssh-lab-hint');
+    const statusEl = document.getElementById('ssh-lab-status');
+    const serverEl = document.getElementById('ssh-lab-server');
+
+    if (!outputEl || !inputEl || !submitEl || !resetEl || !hintEl || !statusEl) return;
+
+    const session = {
+        host: FIXED_SSH_HOST,
+        ip: randomIp(),
+        clientIp: randomIp(),
+        fp: randomFingerprint(),
+        lastLoginAt: null,
+        stage: 'ssh',
+        done: false
+    };
+
+    function scrollToBottom() {
+        outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    function setStatus(ok, msg) {
+        if (!msg) {
+            statusEl.innerHTML = '';
+            return;
+        }
+        statusEl.innerHTML = ok
+            ? `<div class="p-3 rounded border border-[#6ebe4a]/30 bg-[#6ebe4a]/10 text-[#6ebe4a]">${msg}</div>`
+            : `<div class="p-3 rounded border border-red-500/30 bg-red-500/10 text-red-300">${msg}</div>`;
+    }
+
+    function promptHint() {
+        if (session.done) {
+            hintEl.textContent = 'Lab complete. Use Reset to try again.';
+            return;
+        }
+        if (session.stage === 'ssh') hintEl.textContent = `Type: ssh root@${session.host}`;
+        else if (session.stage === 'hostkey') hintEl.textContent = 'Type: yes';
+        else if (session.stage === 'password') hintEl.textContent = 'Type: admin';
+        else if (session.stage === 'command') hintEl.textContent = 'Type: stack assure restart';
+        else hintEl.textContent = '';
+    }
+
+    function println(text) {
+        outputEl.textContent += text + '\n';
+        scrollToBottom();
+    }
+
+    function printPrompt(prefix, typed) {
+        outputEl.textContent += `${prefix}${typed}\n`;
+        scrollToBottom();
+    }
+
+    function reset() {
+        session.host = FIXED_SSH_HOST;
+        session.ip = randomIp();
+        session.clientIp = randomIp();
+        session.fp = randomFingerprint();
+        session.lastLoginAt = new Date(Date.now() - randInt(5, 240) * 60 * 1000);
+        session.stage = 'ssh';
+        session.done = false;
+        outputEl.textContent = '';
+        setStatus(true, '');
+
+        if (serverEl) serverEl.textContent = session.host;
+
+        println('Microsoft Windows [Version 10.0.22631.6649]');
+        println('(c) Microsoft Corporation. All rights reserved.');
+        println('');
+        promptHint();
+        inputEl.value = '';
+        inputEl.focus();
+    }
+
+    function normalize(s) {
+        return (s || '').trim();
+    }
+
+    function handle(lineRaw) {
+        const line = normalize(lineRaw);
+        if (session.done) return;
+
+        if (session.stage === 'ssh') {
+            const expected = `ssh root@${session.host}`;
+            printPrompt('C:\\Users\\Administrator>', line);
+            if (line !== expected) {
+                setStatus(false, `Expected: ${expected}`);
+                return;
+            }
+            const isKnown = localStorage.getItem(KNOWN_HOST_KEY) === '1';
+            if (!isKnown) {
+                setStatus(true, 'First connection. Confirm host key.');
+                println(`The authenticity of host '${session.host} (${session.ip})' can't be established.`);
+                println(`ED25519 key fingerprint is ${session.fp}.`);
+                println('This key is not known by any other names.');
+                println('Are you sure you want to continue connecting (yes/no/[fingerprint])?');
+                session.stage = 'hostkey';
+            } else {
+                setStatus(true, 'Connected. Enter the password.');
+                println(`root@${session.host}'s password:`);
+                session.stage = 'password';
+            }
+            promptHint();
+            return;
+        }
+
+        if (session.stage === 'hostkey') {
+            printPrompt('', line);
+            if (line.toLowerCase() !== 'yes') {
+                setStatus(false, 'Type yes to continue connecting for this lab.');
+                return;
+            }
+            localStorage.setItem(KNOWN_HOST_KEY, '1');
+            setStatus(true, 'Host key accepted. Enter the password.');
+            println(`Warning: Permanently added '${session.host}' (ED25519) to the list of known hosts.`);
+            println(`root@${session.host}'s password:`);
+            session.stage = 'password';
+            promptHint();
+            return;
+        }
+
+        if (session.stage === 'password') {
+            printPrompt('', '*'.repeat(Math.min(8, line.length || 0)));
+            if (line !== 'admin') {
+                setStatus(false, 'Password must be admin.');
+                return;
+            }
+            setStatus(true, 'Authenticated.');
+            println('');
+            if (session.lastLoginAt) {
+                println(`Last login: ${formatLastLogin(session.lastLoginAt)} from ${session.clientIp}`);
+            }
+            println('Welcome to the TSN stack.');
+            println('');
+            println(`root@${session.host}:~#`);
+            session.stage = 'command';
+            promptHint();
+            return;
+        }
+
+        if (session.stage === 'command') {
+            printPrompt(`root@${session.host}:~# `, line);
+            if (line !== 'stack assure restart') {
+                setStatus(false, 'Command must be: stack assure restart');
+                return;
+            }
+            setStatus(true, 'Restart triggered.');
+            println('');
+            println('WARNING: the legacy storage-driver is deprecated, and will be removed in a future release.');
+            println('Refer to the documentation for more information: https://docs.docker.com/go/storage-driver/');
+            println('Removing service assure_ui');
+            println('Removing service assure_backend');
+            println('Creating service assure_ui');
+            println('Creating service assure_backend');
+            println('');
+            session.done = true;
+            promptHint();
+            setStatus(true, 'Lab complete. You successfully connected and ran the restart command.');
+            return;
+        }
+    }
+
+    function submit() {
+        setStatus(true, '');
+        const v = inputEl.value;
+        inputEl.value = '';
+        handle(v);
+        inputEl.focus();
+    }
+
+    submitEl.addEventListener('click', submit);
+    inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submit();
+    });
+    resetEl.addEventListener('click', reset);
+
+    reset();
+}
+initSshLab();
+</script>
+{% endblock %}
