@@ -236,7 +236,7 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
 
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);display:flex;align-items:center;justify-content:center;padding:16px}
 .modal.hidden{display:none}
-.modalCard{width:min(560px,100%);background: rgba(13, 23, 48, 0.92);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow: var(--shadow);backdrop-filter: blur(10px)}
+.modalCard{width:min(560px,100%);background: rgba(13, 23, 48, 0.92);border:1px solid var(--border);border-radius:16px;padding:16px;box-shadow: var(--shadow);backdrop-filter: blur(10px);max-height: calc(100vh - 32px);overflow:auto}
 .modalCardWide{width:min(980px,100%)}
 .modalTitle{font-weight:900;font-size:16px}
 .modalBody{margin-top:12px;display:grid;gap:12px}
@@ -251,7 +251,7 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   background: rgba(4, 8, 16, 0.86);
 }
 .xtermHost{
-  height: 520px;
+  height: min(680px, calc(100vh - 220px));
   padding: 10px;
 }
 

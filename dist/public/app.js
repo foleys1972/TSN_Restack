@@ -7,6 +7,8 @@ let pendingClusterMenuSiteId = null;
 let terminalWs = null;
 let term = null;
 let termDecoder = new TextDecoder();
+let termFit = null;
+let pendingStackStatusRefresh = false;
 
 const el = (id) => document.getElementById(id);
 
@@ -217,6 +219,10 @@ function startJobStream(jobId) {
     isJobRunning = false;
     setActionButtonsDisabled(false);
     setDisabled('stopJobBtn', true);
+    if (pendingStackStatusRefresh) {
+      pendingStackStatusRefresh = false;
+      loadSites().catch(() => {});
+    }
     try { es.close(); } catch {
     }
   });
@@ -227,6 +233,7 @@ function startJobStream(jobId) {
     isJobRunning = false;
     setActionButtonsDisabled(false);
     setDisabled('stopJobBtn', true);
+    pendingStackStatusRefresh = false;
     try { es.close(); } catch {
     }
   };
@@ -254,6 +261,7 @@ async function onSiteAction(e) {
   if (action === 'stackStatus') {
     showError('addSiteError', '');
     const data = await api(`/api/sites/${id}/stack-status`, { method: 'POST', body: JSON.stringify({}) });
+    pendingStackStatusRefresh = true;
     startJobStream(data.jobId);
 
     try {
@@ -311,6 +319,7 @@ function terminalCleanup() {
   } catch {
   }
   term = null;
+  termFit = null;
 }
 
 function wsUrl(path) {
@@ -336,7 +345,18 @@ function startTerminalSession(siteId) {
       foreground: '#EAF1FF'
     }
   });
+  try {
+    if (window.FitAddon?.FitAddon) {
+      termFit = new window.FitAddon.FitAddon();
+      term.loadAddon(termFit);
+    }
+  } catch {
+  }
   term.open(hostEl);
+  try {
+    termFit?.fit?.();
+  } catch {
+  }
   term.focus();
   term.writeln('Connecting...');
 
@@ -347,6 +367,12 @@ function startTerminalSession(siteId) {
   ws.onopen = () => {
     try {
       ws.send(JSON.stringify({ type: 'start', siteId }));
+    } catch {
+    }
+
+    try {
+      termFit?.fit?.();
+      ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
     } catch {
     }
   };
@@ -390,12 +416,15 @@ function startTerminalSession(siteId) {
     }
   });
 
-  window.addEventListener('resize', () => {
+  const onResize = () => {
     try {
+      termFit?.fit?.();
       ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
     } catch {
     }
-  }, { once: true });
+  };
+  window.addEventListener('resize', onResize);
+  ws.addEventListener('close', () => window.removeEventListener('resize', onResize));
 }
 
 async function runConfirmedClusterMenu() {
