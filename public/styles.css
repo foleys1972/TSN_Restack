@@ -135,7 +135,12 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   display:grid;
   grid-template-columns: 1.1fr .9fr;
   gap: 14px;
-  align-items:start;
+  align-items:stretch;
+}
+
+.grid-2 > .panel{
+  display:flex;
+  flex-direction:column;
 }
 
 .sites{
@@ -143,6 +148,9 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   display:grid;
   grid-template-columns: 1fr;
   gap: 10px;
+  overflow:auto;
+  flex: 1;
+  min-height: 140px;
 }
 .site{
   border: 1px solid var(--border);
@@ -184,6 +192,9 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
 
 .terminal{
   padding: 12px 14px 14px 14px;
+  display:flex;
+  flex-direction:column;
+  flex: 1;
 }
 .terminal-head{
   display:flex;
@@ -210,7 +221,9 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   border-top: none;
   border-radius: 0 0 14px 14px;
   padding: 12px;
-  height: 420px;
+  height: auto;
+  flex: 1;
+  min-height: 220px;
   overflow:auto;
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
