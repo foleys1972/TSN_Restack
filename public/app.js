@@ -2,6 +2,11 @@ let sites = [];
 let currentJobId = null;
 let currentStream = null;
 let isJobRunning = false;
+let pendingRestackSiteId = null;
+let pendingClusterMenuSiteId = null;
+let terminalWs = null;
+let term = null;
+let termDecoder = new TextDecoder();
 
 const el = (id) => document.getElementById(id);
 
@@ -9,6 +14,34 @@ function setDisabled(id, disabled) {
   const node = el(id);
   if (!node) return;
   node.disabled = Boolean(disabled);
+}
+
+function openRestackModal() {
+  const modal = el('restackModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  el('restackRun')?.focus();
+}
+
+function closeRestackModal() {
+  const modal = el('restackModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  pendingRestackSiteId = null;
+}
+
+async function runConfirmedRestack() {
+  if (!pendingRestackSiteId) return;
+  try {
+    showError('addSiteError', '');
+    const data = await api(`/api/sites/${pendingRestackSiteId}/restack`, { method: 'POST', body: JSON.stringify({}) });
+    closeRestackModal();
+    startJobStream(data.jobId);
+  } catch (err) {
+    showError('addSiteError', err.message);
+  }
 }
 
 function setText(id, text) {
@@ -38,6 +71,14 @@ function escapeHtml(s) {
     .replaceAll("'", '&#039;');
 }
 
+function stackHealthDotClass(site) {
+  const state = site?.stackHealth?.state;
+  if (state === 'green') return 'status-dot status-green';
+  if (state === 'amber') return 'status-dot status-amber';
+  if (state === 'red') return 'status-dot status-red';
+  return 'status-dot status-unknown';
+}
+
 async function api(path, options) {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -58,6 +99,11 @@ function setActionButtonsDisabled(disabled) {
   document.querySelectorAll('button[data-action]').forEach((btn) => {
     btn.disabled = Boolean(disabled);
   });
+
+  setDisabled('restackRun', disabled);
+  setDisabled('restackCancel', disabled);
+  setDisabled('clusterMenuRun', disabled);
+  setDisabled('clusterMenuCancel', disabled);
 }
 
 function renderSites() {
@@ -87,7 +133,11 @@ function renderSites() {
       </div>
       <div class="siteActions">
         <button class="btn btn-primary" data-action="restack" data-id="${escapeHtml(s.id)}">Run restack</button>
-        <button class="btn" data-action="stackStatus" data-id="${escapeHtml(s.id)}">Stack status</button>
+        <button class="btn btn-stack" data-action="stackStatus" data-id="${escapeHtml(s.id)}">
+          <span class="${stackHealthDotClass(s)}" aria-hidden="true"></span>
+          <span>Stack status</span>
+        </button>
+        <button class="btn" data-action="clusterMenu" data-id="${escapeHtml(s.id)}">TSN Cluster Menu</button>
         <button class="btn btn-ghost" data-action="delete" data-id="${escapeHtml(s.id)}">Delete</button>
       </div>
     `;
@@ -122,6 +172,7 @@ function resetJobView() {
   el('jobSpinner')?.classList.add('hidden');
   isJobRunning = false;
   setActionButtonsDisabled(false);
+  setDisabled('stopJobBtn', true);
 }
 
 function startJobStream(jobId) {
@@ -132,6 +183,7 @@ function startJobStream(jobId) {
   el('jobSpinner')?.classList.remove('hidden');
   isJobRunning = true;
   setActionButtonsDisabled(true);
+  setDisabled('stopJobBtn', false);
 
   const logEl = el('jobLog');
   if (!logEl) return;
@@ -164,6 +216,7 @@ function startJobStream(jobId) {
     el('jobSpinner')?.classList.add('hidden');
     isJobRunning = false;
     setActionButtonsDisabled(false);
+    setDisabled('stopJobBtn', true);
     try { es.close(); } catch {
     }
   });
@@ -173,6 +226,7 @@ function startJobStream(jobId) {
     el('jobSpinner')?.classList.add('hidden');
     isJobRunning = false;
     setActionButtonsDisabled(false);
+    setDisabled('stopJobBtn', true);
     try { es.close(); } catch {
     }
   };
@@ -192,9 +246,8 @@ async function onSiteAction(e) {
   }
 
   if (action === 'restack') {
-    showError('addSiteError', '');
-    const data = await api(`/api/sites/${id}/restack`, { method: 'POST', body: JSON.stringify({}) });
-    startJobStream(data.jobId);
+    pendingRestackSiteId = id;
+    openRestackModal();
     return;
   }
 
@@ -202,7 +255,162 @@ async function onSiteAction(e) {
     showError('addSiteError', '');
     const data = await api(`/api/sites/${id}/stack-status`, { method: 'POST', body: JSON.stringify({}) });
     startJobStream(data.jobId);
+
+    try {
+      await loadSites();
+    } catch {
+    }
     return;
+  }
+
+  if (action === 'clusterMenu') {
+    pendingClusterMenuSiteId = id;
+    openClusterMenuConfirm();
+  }
+}
+
+function openClusterMenuConfirm() {
+  const modal = el('clusterMenuConfirmModal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+  el('clusterMenuRun')?.focus();
+}
+
+function closeClusterMenuConfirm() {
+  const modal = el('clusterMenuConfirmModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+  pendingClusterMenuSiteId = null;
+}
+
+function openTerminalModal() {
+  const modal = el('terminalModal');
+  if (!modal) return;
+  showError('terminalError', '');
+  modal.classList.remove('hidden');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeTerminalModal() {
+  const modal = el('terminalModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+  modal.setAttribute('aria-hidden', 'true');
+}
+
+function terminalCleanup() {
+  try {
+    terminalWs?.close();
+  } catch {
+  }
+  terminalWs = null;
+  try {
+    term?.dispose();
+  } catch {
+  }
+  term = null;
+}
+
+function wsUrl(path) {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${proto}//${location.host}${path}`;
+}
+
+function startTerminalSession(siteId) {
+  terminalCleanup();
+
+  const hostEl = el('xterm');
+  if (!hostEl) return;
+  hostEl.innerHTML = '';
+
+  openTerminalModal();
+
+  term = new Terminal({
+    cursorBlink: true,
+    fontSize: 12,
+    fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    theme: {
+      background: '#040810',
+      foreground: '#EAF1FF'
+    }
+  });
+  term.open(hostEl);
+  term.focus();
+  term.writeln('Connecting...');
+
+  const ws = new WebSocket(wsUrl('/ws/terminal'));
+  terminalWs = ws;
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    try {
+      ws.send(JSON.stringify({ type: 'start', siteId }));
+    } catch {
+    }
+  };
+
+  ws.onmessage = (evt) => {
+    if (typeof evt.data === 'string') {
+      try {
+        const msg = JSON.parse(evt.data);
+        if (msg?.type === 'error') {
+          showError('terminalError', msg.error || 'Terminal error');
+          term?.writeln(`\r\n[error] ${msg.error || 'Terminal error'}\r\n`);
+        }
+      } catch {
+        term?.write(evt.data);
+      }
+      return;
+    }
+
+    try {
+      const text = termDecoder.decode(evt.data);
+      term?.write(text);
+    } catch {
+    }
+  };
+
+  ws.onclose = () => {
+    try {
+      term?.writeln('\r\n[disconnected]');
+    } catch {
+    }
+  };
+
+  ws.onerror = () => {
+    showError('terminalError', 'WebSocket error');
+  };
+
+  term.onData((data) => {
+    try {
+      ws.send(JSON.stringify({ type: 'input', data }));
+    } catch {
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    try {
+      ws.send(JSON.stringify({ type: 'resize', cols: term.cols, rows: term.rows }));
+    } catch {
+    }
+  }, { once: true });
+}
+
+async function runConfirmedClusterMenu() {
+  if (!pendingClusterMenuSiteId) return;
+  const siteId = pendingClusterMenuSiteId;
+  closeClusterMenuConfirm();
+  startTerminalSession(siteId);
+}
+
+async function stopCurrentJob() {
+  if (!currentJobId) return;
+  try {
+    await api(`/api/jobs/${currentJobId}/stop`, { method: 'POST', body: JSON.stringify({}) });
+  } catch (err) {
+    showError('addSiteError', err.message);
   }
 }
 
@@ -237,11 +445,69 @@ function setup() {
     await loadSites();
   });
 
+  el('restackCancel')?.addEventListener('click', closeRestackModal);
+  el('restackRun')?.addEventListener('click', runConfirmedRestack);
+
+  el('restackModal')?.addEventListener('click', (e) => {
+    if (e.target === el('restackModal')) closeRestackModal();
+  });
+
+  el('clusterMenuCancel')?.addEventListener('click', closeClusterMenuConfirm);
+  el('clusterMenuRun')?.addEventListener('click', runConfirmedClusterMenu);
+
+  el('clusterMenuConfirmModal')?.addEventListener('click', (e) => {
+    if (e.target === el('clusterMenuConfirmModal')) closeClusterMenuConfirm();
+  });
+
+  el('terminalClose')?.addEventListener('click', () => {
+    try {
+      terminalWs?.send(JSON.stringify({ type: 'close' }));
+    } catch {
+    }
+    terminalCleanup();
+    closeTerminalModal();
+  });
+
+  el('terminalModal')?.addEventListener('click', (e) => {
+    if (e.target === el('terminalModal')) {
+      try {
+        terminalWs?.send(JSON.stringify({ type: 'close' }));
+      } catch {
+      }
+      terminalCleanup();
+      closeTerminalModal();
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const modal = el('restackModal');
+      if (modal && !modal.classList.contains('hidden')) closeRestackModal();
+
+      const clusterModal = el('clusterMenuConfirmModal');
+      if (clusterModal && !clusterModal.classList.contains('hidden')) closeClusterMenuConfirm();
+
+      const termModal = el('terminalModal');
+      if (termModal && !termModal.classList.contains('hidden')) {
+        try {
+          terminalWs?.send(JSON.stringify({ type: 'close' }));
+        } catch {
+        }
+        terminalCleanup();
+        closeTerminalModal();
+      }
+    }
+  });
+
+  el('stopJobBtn')?.addEventListener('click', stopCurrentJob);
+
   loadSites().catch((err) => {
     showError('addSiteError', err.message);
   });
 
   resetJobView();
+  setDisabled('stopJobBtn', true);
 }
 
+setup();
 setup();

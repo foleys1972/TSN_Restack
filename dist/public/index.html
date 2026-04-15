@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TSN SSH Automation</title>
   <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="https://unpkg.com/xterm/css/xterm.css" />
 </head>
 <body>
   <div class="app">
@@ -78,6 +79,7 @@
             <div class="job-badges">
               <div id="jobMeta" class="badge badge-muted"></div>
               <div id="jobStatus" class="badge badge-muted"></div>
+              <button id="stopJobBtn" type="button" class="btn btn-danger" disabled>Stop</button>
             </div>
           </div>
 
@@ -104,6 +106,56 @@
     </main>
   </div>
 
+  <div id="restackModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalTitle">Confirm restack</div>
+      <div class="modalBody">
+        <div class="warn" style="border-color: rgba(254,188,46,.35); background: rgba(254,188,46,.10); color: #ffe7b3;">
+          Are you sure you want to run a restack on this site?
+        </div>
+      </div>
+      <div class="modalActions">
+        <button id="restackCancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="restackRun" type="button" class="btn btn-primary">Run</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="clusterMenuConfirmModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modalCard">
+      <div class="modalTitle">Confirm TSN Cluster Menu</div>
+      <div class="modalBody">
+        <div class="warn">
+          Are you sure you want to open the TSN Cluster Menu on this site?
+        </div>
+      </div>
+      <div class="modalActions">
+        <button id="clusterMenuCancel" type="button" class="btn btn-ghost">Cancel</button>
+        <button id="clusterMenuRun" type="button" class="btn btn-primary">Open menu</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="terminalModal" class="modal hidden" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modalCard modalCardWide">
+      <div class="row" style="justify-content: space-between; align-items: center;">
+        <div>
+          <div class="modalTitle">TSN Cluster Menu</div>
+          <div class="muted" style="margin-top:6px; font-size:12.5px;">Keyboard input is enabled. Use the menu to exit, or press Close.</div>
+        </div>
+        <div class="modalActions" style="margin-top:0;">
+          <button id="terminalClose" type="button" class="btn btn-ghost">Close</button>
+        </div>
+      </div>
+
+      <div class="terminalWrap">
+        <div id="xterm" class="xtermHost"></div>
+      </div>
+      <div id="terminalError" class="error"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/xterm/lib/xterm.js"></script>
   <script src="/app.js"></script>
 </body>
 </html>
