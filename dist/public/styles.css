@@ -156,6 +156,7 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   display:flex;
   flex-direction:column;
   overflow:hidden;
+  min-height: 0;
 }
 
 .sites{
@@ -210,6 +211,7 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   display:flex;
   flex-direction:column;
   flex: 1;
+  min-height: 0;
 }
 .terminal-head{
   display:flex;
@@ -238,7 +240,7 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   padding: 12px;
   height: auto;
   flex: 1;
-  min-height: 220px;
+  min-height: 0;
   overflow:auto;
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
