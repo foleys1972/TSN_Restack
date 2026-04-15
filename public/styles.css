@@ -136,11 +136,13 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   grid-template-columns: 1.1fr .9fr;
   gap: 14px;
   align-items:stretch;
+  height: min(720px, calc(100vh - 260px));
 }
 
 .grid-2 > .panel{
   display:flex;
   flex-direction:column;
+  overflow:hidden;
 }
 
 .sites{
