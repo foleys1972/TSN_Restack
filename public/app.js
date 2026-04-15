@@ -9,6 +9,7 @@ let term = null;
 let termDecoder = new TextDecoder();
 let termFit = null;
 let pendingStackStatusRefresh = false;
+let sitesFilterValue = '';
 
 const el = (id) => document.getElementById(id);
 
@@ -114,16 +115,29 @@ function renderSites() {
   const meta = el('sitesMeta');
   if (!wrap || !empty) return;
 
+  const q = String(sitesFilterValue || '').trim().toLowerCase();
+  const filtered = q
+    ? (sites || []).filter((s) => {
+      const hay = `${s?.name || ''} ${s?.host || ''} ${s?.port || ''} ${s?.id || ''}`.toLowerCase();
+      return hay.includes(q);
+    })
+    : (sites || []);
+
   wrap.innerHTML = '';
   if (!sites.length) {
     empty.textContent = 'No sites yet. Add one above.';
     if (meta) meta.textContent = '';
     return;
   }
-  empty.textContent = '';
-  if (meta) meta.textContent = `${sites.length} site${sites.length === 1 ? '' : 's'}`;
 
-  for (const s of sites) {
+  if (!filtered.length) {
+    empty.textContent = 'No matching sites.';
+  } else {
+    empty.textContent = '';
+  }
+  if (meta) meta.textContent = `${filtered.length} / ${sites.length} site${sites.length === 1 ? '' : 's'}`;
+
+  for (const s of filtered) {
     const card = document.createElement('div');
     card.className = 'site';
     card.innerHTML = `
@@ -472,6 +486,11 @@ function setup() {
 
   el('refreshBtn')?.addEventListener('click', async () => {
     await loadSites();
+  });
+
+  el('sitesFilter')?.addEventListener('input', (e) => {
+    sitesFilterValue = e?.target?.value || '';
+    renderSites();
   });
 
   el('restackCancel')?.addEventListener('click', closeRestackModal);

@@ -81,6 +81,19 @@ body{
 .panel-sub{color:var(--muted);font-size:12.5px;margin-top:4px}
 .right{white-space:nowrap}
 
+.sitesFilterRow{padding: 10px 14px 0 14px}
+.sitesFilter{
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: rgba(11, 20, 42, 0.7);
+  color: var(--text);
+  outline: none;
+}
+.sitesFilter::placeholder{color: rgba(163, 180, 216, 0.55)}
+.sitesFilter:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
+
 .form-grid{
   padding: 12px 14px 14px 14px;
   display:grid;
