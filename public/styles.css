@@ -241,7 +241,8 @@ input:focus{box-shadow:0 0 0 4px var(--ring);border-color: rgba(4,159,217,.55)}
   height: auto;
   flex: 1;
   min-height: 0;
-  overflow:auto;
+  overflow-y:auto;
+  overflow-x:auto;
   white-space: pre-wrap;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   font-size: 12.5px;
